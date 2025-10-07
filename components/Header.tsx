@@ -47,6 +47,7 @@ const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openMobileSubMenu, setOpenMobileSubMenu] = useState<string | null>(null);
   const [isSearchOverlayOpen, setIsSearchOverlayOpen] = useState(false);
+  const [isOverlayRendered, setIsOverlayRendered] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SearchableContent[]>([]);
   const [isResultsVisible, setIsResultsVisible] = useState(false);
@@ -63,9 +64,14 @@ const Header: React.FC = () => {
   useEffect(() => {
     if (isSearchOverlayOpen) {
       document.body.style.overflow = 'hidden';
+      // After mounting, trigger the transition for a smooth entry animation
+      requestAnimationFrame(() => {
+        setIsOverlayRendered(true);
+      });
       setTimeout(() => searchInputRef.current?.focus(), 100);
     } else {
       document.body.style.overflow = 'auto';
+      setIsOverlayRendered(false); // Reset on close
     }
     return () => {
       document.body.style.overflow = 'auto';
@@ -318,29 +324,36 @@ const Header: React.FC = () => {
 
       {/* Search Overlay for Mobile */}
       {isSearchOverlayOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-start justify-center p-4 pt-[15vh]">
-          <div className="relative bg-white w-full max-w-2xl rounded-lg shadow-xl" role="dialog" aria-modal="true">
+        <div className={`fixed inset-0 bg-black z-50 flex items-start justify-center p-4 pt-[15vh] transition-opacity duration-300 ease-in-out ${isOverlayRendered ? 'bg-opacity-80' : 'bg-opacity-0'}`}>
+          <div 
+            className={`relative bg-white w-full max-w-2xl rounded-lg shadow-xl transition-all duration-300 ease-in-out ${isOverlayRendered ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`} 
+            role="dialog" 
+            aria-modal="true"
+          >
             <div className="p-4">
               <div className="relative">
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  placeholder="Search KayJay Security..."
-                  className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-md focus:ring-kayjay-gold focus:border-kayjay-gold"
-                />
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                    <SearchIcon className="h-6 w-6"/>
-                </div>
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <SearchIcon className="h-6 w-6 text-gray-400" />
+                  </div>
+                  <input
+                      ref={searchInputRef}
+                      type="search"
+                      value={searchTerm}
+                      onChange={handleSearchChange}
+                      placeholder="Search KayJay Security..."
+                      className="block w-full border border-gray-300 rounded-full py-3 pl-14 pr-14 text-base placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-kayjay-gold"
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
+                      <button onClick={closeSearch} className="text-gray-500 hover:text-kayjay-blue p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-kayjay-blue">
+                          <CloseIcon className="h-6 w-6" />
+                          <span className="sr-only">Close search</span>
+                      </button>
+                  </div>
               </div>
-              <button onClick={closeSearch} className="absolute top-4 right-4 text-gray-500 hover:text-black">
-                <CloseIcon className="h-6 w-6" />
-                <span className="sr-only">Close search</span>
-              </button>
             </div>
+            
             {searchTerm.length > 1 && (
-                 <div className="max-h-[50vh] overflow-y-auto border-t">
+                 <div className="max-h-[50vh] overflow-y-auto border-t border-gray-200">
                     <SearchResultsList />
                 </div>
             )}
